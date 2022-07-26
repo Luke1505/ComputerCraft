@@ -1,7 +1,7 @@
 local bbf = require("blbfor")
 
 local handle = bbf.open_url("https://github.com/Luke1550/ComputerCraft/raw/main/pictures/PepeSmile.bbf")
-local DISPLAY_ON = term.current()
+local DISPLAY_ON = term.redirect(peripheral.find("monitor"))
 
 local win = window.create(DISPLAY_ON, 1, 1, DISPLAY_ON.getSize())
 
