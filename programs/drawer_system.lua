@@ -1,8 +1,8 @@
 local chests = { peripheral.find("storagedrawers:controller") }
---local data_monitor = peripheral.find("monitor")
-local data_monitor = peripheral.wrap("right") -- temp
-local sleep_time = 30
+local data_monitor = peripheral.find("monitor")
+local sleep_time = 30  
 data_monitor.setTextScale(0.5)
+
 
 local function move_line()
     data_monitor.setCursorPos(1, select(2, data_monitor.getCursorPos()) + 1)
@@ -53,16 +53,6 @@ local function get_drawer_data(drawer)
     return name, taken, max
 end
 
-local function process_drawers(controller, chest_list)
-    for _, chest in ipairs(controller) do
-        local drawers = get_drawers(chest)
-        for _, drawer in ipairs(drawers) do
-            local name, taken, max = get_drawer_data(drawer)
-            add(chest_list, taken, name, max)
-        end
-    end
-end
-
 local function make_progressbar(size, taken, max)
     size = size - 2
     local progress = math.floor(size * taken / max)
@@ -95,7 +85,7 @@ local function write_chest_data(index, taken, max)
     data_monitor.write(itemName)
     data_monitor.setCursorPos(45, y)
     data_monitor.write(counter)
-    data_monitor.setCursorPos(60, y)
+    data_monitor.setCursorPos(60 , y)
     data_monitor.write(make_progressbar(size, taken, max))
     data_monitor.write(" " .. percent .. "%")
     data_monitor.setCursorPos(97,y)
@@ -106,17 +96,33 @@ end
 local current_page = 1 -- current page
 local pages = {}
 local max_storage
+local calls = {}
 local taken_storage
+local reading = false
 
 local function scan_chests() -- you currently have this in your loop, but having this in a function would be a bit more convenient for what we're gonna do
+	local w, h = data_monitor.getSize()
+    local txt = " \27" .. current_page .. "/" .. #pages .. "\26 "
+    local x, y = math.floor(w / 2 - #txt / 2) + 1,  h
+    data_monitor.setCursorPos(x, y) -- centered on bottom row
+    data_monitor.setTextColour(colors.lightGray)
+    data_monitor.write(txt)
     max_storage = 0
     taken_storage = 0
     pages = {}
-    local calls = {}
+    calls = {}
     local chests_list = {}
     for i, chest in pairs(chests) do
-        table.insert(calls, process_drawers(chest, chests_list))
-    end
+        table.insert(calls, function()
+        	local drawers = get_drawers(chest)
+     		for i, drawer in ipairs(drawers) do
+     			local name, taken, max = get_drawer_data(drawer)
+     			taken_storage = taken_storage + taken
+     			max_storage = max_storage + max
+     			add(chests_list, taken, name, max)
+     		end
+        end)
+    end 
     parallel.waitForAll(table.unpack(calls))
     -- up to this point it was basically what you were doing already. We now need to order the chests_list table alphabetically.
     -- To do this, we're gonna create a sort function that will be fed to table.sort that'll sort based on the name field in the chests_list entries.
@@ -129,6 +135,12 @@ local function scan_chests() -- you currently have this in your loop, but having
         pages[p] = pages[p] or {}
         table.insert(pages[p], chests_list[i])
     end
+    local w, h = data_monitor.getSize()
+    local txt = " \27" .. current_page .. "/" .. #pages .. "\26 "
+    local x, y = math.floor(w / 2 - #txt / 2) + 1,  h
+    data_monitor.setCursorPos(x, y) -- centered on bottom row
+    data_monitor.setTextColour(colors.white)
+    data_monitor.write(txt)
     -- now we have our pages
 end
 
@@ -170,6 +182,9 @@ end
 
 local function keep_up_to_date()
     while true do
+    	if current_page ~= 1 then
+    		current_page = 1
+    	end
         scan_chests()
         render()
         os.sleep(sleep_time)
