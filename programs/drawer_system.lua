@@ -54,6 +54,16 @@ local function get_drawer_data(drawer)
     return name, taken, max
 end
 
+local function process_drawers(controller, chest_list)
+    for _, chest in ipairs(controller) do
+        local drawers = get_drawers(chest)
+        for _, drawer in ipairs(drawers) do
+            local name, taken, max = get_drawer_data(drawer)
+            add(chest_list, taken, name, max)
+        end
+    end
+end
+
 local function make_progressbar(size, taken, max)
     size = size - 2
     local progress = math.floor(size * taken / max)
@@ -105,18 +115,12 @@ local function scan_chests() -- you currently have this in your loop, but having
     max_storage = 0
     taken_storage = 0
     pages = {}
+    local calls = {}
     local chests_list = {}
     for i, chest in pairs(chests) do
-        local drawers = get_drawers(chest)
-        for i, drawer in ipairs(drawers) do
-            local name, taken, max = get_drawer_data(drawer)
-
-            taken_storage = taken_storage + taken
-            max_storage = max_storage + max
-            add(chests_list, taken, name, max)
-
-        end
+        table.insert(calls, process_drawers(chest, chests_list))
     end
+    parallel.waitForAll(table.unpack(calls))
     -- up to this point it was basically what you were doing already. We now need to order the chests_list table alphabetically.
     -- To do this, we're gonna create a sort function that will be fed to table.sort that'll sort based on the name field in the chests_list entries.
     table.sort(chests_list, function(a, b) return a.name < b.name end)
