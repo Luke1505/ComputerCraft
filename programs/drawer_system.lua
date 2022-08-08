@@ -52,6 +52,16 @@ local function get_drawer_data(drawer)
     return name, taken, max
 end
 
+function process_drawers(drawer,chests_list)
+    for i, drawer in ipairs(drawer) do
+        local drawers = get_drawers(drawer)
+        local name, taken, max = get_drawer_data(drawers)
+        taken_storage = taken_storage + taken
+        max_storage = max_storage + max
+        add(chests_list, taken, name, max)
+    end
+end
+
 local function make_progressbar(size, taken, max)
     size = size - 2
     local progress = math.floor(size * taken / max)
@@ -83,15 +93,11 @@ while true do
     local max_storage = 0
     local taken_storage = 0
     local chests_list = {}
+    local calls = {}
     for i, chest in pairs(chests) do
-        local drawers = get_drawers(chest)
-        for i, drawer in ipairs(drawers) do
-            local name, taken, max = get_drawer_data(drawer)
-            taken_storage = taken_storage + taken
-            max_storage = max_storage + max
-            add(chests_list, taken, name, max)
-        end
+        table.insert(calls, process_drawers(chest, chests_list))
     end
+    parallel.waitForAll(table.unpack(calls))
     data_monitor.clear()
     data_monitor.setCursorPos(1, 1)
     write_progressbar(taken_storage, max_storage)
