@@ -1,6 +1,5 @@
 local chests = { peripheral.find("storagedrawers:controller") }
 --local data_monitor = peripheral.find("monitor")
-os.loadAPI("bigfont")
 local data_monitor = peripheral.wrap("right") -- temp
 local sleep_time = 30
 data_monitor.setTextScale(0.5)
@@ -108,8 +107,6 @@ local current_page = 1 -- current page
 local pages = {}
 local max_storage
 local taken_storage
-local arrow_left_x -- x positions of left and right arrows
-local arrow_right_x
 
 local function scan_chests() -- you currently have this in your loop, but having this in a function would be a bit more convenient for what we're gonna do
     max_storage = 0
@@ -159,18 +156,14 @@ local function touch()
     while true do
         local e = { os.pullEvent() } -- listen for events and put them in a table called "e"
         local w, h = data_monitor.getSize()
-        if e[1] == "monitor_touch" then -- if the monitor was touched on the bottom row
-            if (e[3] / w) <     0.5 and current_page > 1 then -- if left arrow was touched and theres a page on the left side (not the case if we're on page 1)
+        if e[1] == "monitor_touch" then
+            if (e[3] / w) < 0.5 and current_page > 1 then -- if left arrow was touched and theres a page on the left side (not the case if we're on page 1)
                 current_page = current_page - 1
                 render() -- so that we can see the new page
             elseif (e[3] / w) > 0.5 and current_page < #pages then -- if right arrow was touched and theres a page on the right side (not the case if we're on the last page)
                 current_page = current_page + 1
                 render()
             end
-            --[[elseif e[1] == "timer" and e[2] == timer_id then -- if our timer expired then scan for chests again like your original code
-			scan_chests()
-			render()
-			timer_id = os.startTimer(sleep_time) -- start a new timer]]
         end
     end
 end
