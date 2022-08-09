@@ -7,7 +7,6 @@ fs.delete("GuiH_minified")
 write("Setting stuff up. please stand by")
 local x,y = term.getCursorPos()
 x = x + 1
-write(" 0%")d:\Program Files\CraftOS-PC\rom\startup.lua
 
 local github_api = http.get(
 	"https://api.github.com/repos/9551-Dev/GuiH/git/trees/main?recursive=1",
